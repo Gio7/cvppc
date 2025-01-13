@@ -476,6 +476,22 @@ class CachedVideoPlayerPlusController
     ]);
   }
 
+  static Future<String?> getCachedVideoPath(String dataSource) async {
+    await _storage.initStorage;
+
+    return (await _cacheManager.getFileFromCache(dataSource))?.file.path;
+  }
+
+  static Future<String?> saveCachedVideo(String dataSource) async {
+    await _storage.initStorage;
+    final file = await _cacheManager.downloadFile(dataSource);
+    _storage.write(
+      _getCacheKey(dataSource),
+      DateTime.timestamp().millisecondsSinceEpoch,
+    );
+    return file.file.path;
+  }
+
   /// Attempts to open the given [dataSource] and load metadata about the video.
   Future<void> initialize() async {
     await _storage.initStorage;
