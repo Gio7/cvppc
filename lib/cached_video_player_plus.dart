@@ -625,7 +625,11 @@ class CachedVideoPlayerPlusController
           // position=value.duration. Instead of setting the values directly,
           // we use pause() and seekTo() to ensure the platform stops playing
           // and seeks to the last frame of the video.
-          pause().then((void pauseResult) => seekTo(value.duration));
+          pause().then((void pauseResult) {
+            if (!_isDisposed) {
+              seekTo(value.duration);
+            }
+          });
           value = value.copyWith(isCompleted: true);
         case VideoEventType.bufferingUpdate:
           value = value.copyWith(buffered: event.buffered);
@@ -694,8 +698,14 @@ class CachedVideoPlayerPlusController
   /// has been sent to the platform, not when playback itself is totally
   /// finished.
   Future<void> play() async {
+    if (_isDisposed) {
+      return;
+    }
     if (value.position == value.duration) {
       await seekTo(Duration.zero);
+    }
+    if (_isDisposed) {
+      return;
     }
     value = value.copyWith(isPlaying: true);
     await _applyPlayPause();
@@ -704,12 +714,18 @@ class CachedVideoPlayerPlusController
   /// Sets whether or not the video should loop after playing once. See also
   /// [CachedVideoPlayerPlusValue.isLooping].
   Future<void> setLooping(bool looping) async {
+    if (_isDisposed) {
+      return;
+    }
     value = value.copyWith(isLooping: looping);
     await _applyLooping();
   }
 
   /// Pauses the video.
   Future<void> pause() async {
+    if (_isDisposed) {
+      return;
+    }
     value = value.copyWith(isPlaying: false);
     await _applyPlayPause();
   }
@@ -810,6 +826,9 @@ class CachedVideoPlayerPlusController
   /// [volume] indicates a value between 0.0 (silent) and 1.0 (full volume) on a
   /// linear scale.
   Future<void> setVolume(double volume) async {
+    if (_isDisposed) {
+      return;
+    }
     value = value.copyWith(volume: volume.clamp(0.0, 1.0));
     await _applyVolume();
   }
@@ -832,6 +851,9 @@ class CachedVideoPlayerPlusController
   ///   possible that your specific video cannot be slowed down, in which case
   ///   the plugin also reports errors.
   Future<void> setPlaybackSpeed(double speed) async {
+    if (_isDisposed) {
+      return;
+    }
     if (speed < 0) {
       throw ArgumentError.value(
         speed,
@@ -858,6 +880,9 @@ class CachedVideoPlayerPlusController
   /// * >0: The caption will have a negative offset. So you will get caption text from the past.
   /// * <0: The caption will have a positive offset. So you will get caption text from the future.
   void setCaptionOffset(Duration offset) {
+    if (_isDisposed) {
+      return;
+    }
     value = value.copyWith(
       captionOffset: offset,
       caption: _getCaptionAt(value.position),
@@ -898,6 +923,9 @@ class CachedVideoPlayerPlusController
   Future<void> setClosedCaptionFile(
     Future<ClosedCaptionFile>? closedCaptionFile,
   ) async {
+    if (_isDisposed) {
+      return;
+    }
     await _updateClosedCaptionWithFuture(closedCaptionFile);
     _closedCaptionFileFuture = closedCaptionFile;
   }
@@ -905,11 +933,17 @@ class CachedVideoPlayerPlusController
   Future<void> _updateClosedCaptionWithFuture(
     Future<ClosedCaptionFile>? closedCaptionFile,
   ) async {
+    if (_isDisposed) {
+      return;
+    }
     _closedCaptionFile = await closedCaptionFile;
     value = value.copyWith(caption: _getCaptionAt(value.position));
   }
 
   void _updatePosition(Duration position) {
+    if (_isDisposed) {
+      return;
+    }
     value = value.copyWith(
       position: position,
       caption: _getCaptionAt(position),
